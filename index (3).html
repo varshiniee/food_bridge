@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Food Bridge</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { burgundy:'#9F292F', maroon:'#84252B', rose:'#C95F70', blush:'#F6DADB', cream:'#FFF1DF', offwhite:'#FFFAF7', ink:'#702B30' },
+  fontFamily: { sans: ['Poppins','sans-serif'] }
+}}};
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  body { background:#FFF1DF; }
+  .hero-grad { background: linear-gradient(135deg,#C95F70 0%,#9F292F 55%,#84252B 100%); }
+  .soft { box-shadow: 0 8px 24px rgba(159,41,47,.10); }
+</style>
+</head>
+<body class="font-sans text-ink">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* =========================================================
+   PHOTOS - change any link here to use your own pictures.
+   You can also use local files, e.g. 'images/biryani.jpg'.
+   If a photo fails to load, a plain label is shown instead.
+   ========================================================= */
+const u = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=80`;
+const IMG = {
+  hero:      u('1546069901-ba9599a7e63c'),
+  heroSmall1:u('1504674900247-0877df9cc836'),
+  heroSmall2:u('1512621776951-a57141f2eefd'),
+  biryani:   u('1589302168068-964664d93dc0'),
+  curry:     u('1631452180519-c014fe946bc7'),
+  sandwich:  u('1528735602780-2552fd46c7af'),
+  idli:      u('1589301760014-d929f3979dbc'),
+  pasta:     u('1621996346565-e3dbc646d9a9'),
+  fruit:     u('1490474418585-ba9bad8fd0ea'),
+  volunteers:u('1593113598332-cd288d649433'),
+  kitchen:   u('1556910103-1c02745aae4d'),
+  donation:  u('1532629345422-7515f3d16bb6'),
+  community: u('1488521787991-ed7bbaae773c'),
+  hands:     u('1469571486292-0ba58a3f068b'),
+  restaurant:u('1414235077428-338989a2e8c0'),
+};
+
+/* ---------- icons (simple line icons) ---------- */
+const ICONS = {
+  pin:'M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z M12 12a2 2 0 100-4 2 2 0 000 4z',
+  clock:'M12 7v5l3 2 M12 21a9 9 0 100-18 9 9 0 000 18z',
+  box:'M21 8l-9-5-9 5v8l9 5 9-5V8z M3 8l9 5 9-5 M12 13v8',
+  user:'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 11a4 4 0 100-8 4 4 0 000 8z',
+  shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+  eye:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z M12 15a3 3 0 100-6 3 3 0 000 6z',
+  check:'M20 6L9 17l-5-5',
+  badge:'M22 11.1V12a10 10 0 11-5.9-9.1 M22 4L12 14l-3-3',
+  scale:'M12 3v18 M5 21h14 M5 7h14 M5 7l-3 8a4 4 0 006 0L5 7z M19 7l-3 8a4 4 0 006 0l-3-8z',
+  truck:'M1 3h15v13H1z M16 8h4l3 3v5h-7z M5.5 21a2 2 0 100-4 2 2 0 000 4z M18.5 21a2 2 0 100-4 2 2 0 000 4z',
+  store:'M3 9l1-5h16l1 5 M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0 M5 21V12 M19 21V12 M5 21h14',
+  list:'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  heart:'M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 000-7.8z',
+  mail:'M4 4h16v16H4z M22 6l-10 7L2 6',
+  phone:'M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z',
+  bridge:'M2 19h20 M4 19v-6 M20 19v-6 M4 13c4-9 12-9 16 0 M9 19v-7 M12 19V9 M15 19v-7',
+  fork:'M7 3v8a2 2 0 002 2v8 M11 3v8 M7 7h4 M17 3c-2 2-3 5-3 8h3v10',
+};
+const Icon = ({ n, className = 'w-6 h-6' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={ICONS[n]} /></svg>
+);
+const Photo = ({ src, alt, className = '' }) => {
+  const [bad, setBad] = useState(false);
+  if (bad) return <div className={className + ' bg-blush text-burgundy flex items-center justify-center text-center text-sm font-semibold p-3'}>{alt}</div>;
+  return <img src={src} alt={alt} loading="lazy" onError={() => setBad(true)} className={className + ' object-cover'} />;
+};
+
+/* ---------- helpers ---------- */
+function useStore(key, init) {
+  const [v, setV] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; }
+  });
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} }, [key, v]);
+  return [v, setV];
+}
+function useHash() {
+  const get = () => (location.hash.replace('#/', '') || 'home');
+  const [h, setH] = useState(get());
+  useEffect(() => { const f = () => { setH(get()); window.scrollTo(0, 0); }; window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f); }, []);
+  return h;
+}
+const go = (p) => { location.hash = '#/' + p; };
+
+/* distance and delivery-time estimate (same formula is used in the backend) */
+const distanceKm = (a, b, c, d) => {
+  const R = 6371, t = (x) => x * Math.PI / 180;
+  const dLa = t(c - a), dLo = t(d - b);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(t(a)) * Math.cos(t(c)) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+// 10 min for dispatch + pickup, then road distance (1.3 x straight line) at 20 km/h city speed
+const etaMinutes = (km) => Math.round(10 + (km * 1.3) / 20 * 60);
+const MAX_RANGE_KM = 25;
+
+/* ---------- data ---------- */
+const FOODS = [
+  { id:1, name:'Veg Biryani', rest:'Spice Garden', qty:25, unit:'meals', loc:'T. Nagar, Chennai', lat:13.0418, lng:80.2341, prep:'Today, 6:30 PM', deadline:'Today, 10:00 PM', cat:'Rice', img:IMG.biryani },
+  { id:2, name:'Chapati & Paneer Curry', rest:'Annapoorna Kitchen', qty:40, unit:'meals', loc:'Adyar, Chennai', lat:13.0012, lng:80.2565, prep:'Today, 7:00 PM', deadline:'Today, 10:30 PM', cat:'Meals', img:IMG.curry },
+  { id:3, name:'Fresh Sandwiches', rest:'Bake & Bite Cafe', qty:8, unit:'pieces', loc:'Anna Nagar, Chennai', lat:13.0850, lng:80.2101, prep:'Today, 5:00 PM', deadline:'Today, 9:00 PM', cat:'Snacks', img:IMG.sandwich },
+  { id:4, name:'Idli & Sambar', rest:'Murugan Tiffins', qty:60, unit:'idlis', loc:'Velachery, Chennai', lat:12.9815, lng:80.2180, prep:'Tomorrow, 7:00 AM', deadline:'Tomorrow, 10:00 AM', cat:'Breakfast', img:IMG.idli },
+  { id:5, name:'Pasta & Garlic Bread', rest:'Little Italy', qty:9, unit:'meals', loc:'Nungambakkam, Chennai', lat:13.0604, lng:80.2496, prep:'Today, 7:30 PM', deadline:'Today, 10:30 PM', cat:'Meals', img:IMG.pasta },
+  { id:6, name:'Fruit Bowls', rest:'Fresh Fork', qty:35, unit:'bowls', loc:'Mylapore, Chennai', lat:13.0339, lng:80.2693, prep:'Today, 4:00 PM', deadline:'Today, 8:30 PM', cat:'Fruits', img:IMG.fruit },
+];
+const CATS = ['All', 'Meals', 'Rice', 'Snacks', 'Breakfast', 'Fruits'];
+
+/* ---------- small UI ---------- */
+const Btn = ({ children, onClick, variant = 'solid', className = '', type = 'button', disabled }) => (
+  <button type={type} onClick={onClick} disabled={disabled}
+    className={'rounded-full px-5 py-2.5 text-sm font-semibold transition hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100 ' +
+    (variant === 'solid' ? 'bg-burgundy text-white hover:bg-maroon ' : variant === 'light' ? 'bg-white text-burgundy ' : 'border-2 border-burgundy text-burgundy ') + className}>{children}</button>
+);
+const Card = ({ children, className = '' }) => <div className={'bg-white rounded-3xl soft p-6 ' + className}>{children}</div>;
+const H2 = ({ children, sub }) => (
+  <div className="mb-6"><h2 className="text-3xl font-extrabold text-burgundy">{children}</h2>{sub && <p className="text-ink/70 mt-1">{sub}</p>}</div>
+);
+const Field = ({ label, children }) => (
+  <label className="block"><span className="text-sm font-semibold text-burgundy">{label}</span><div className="mt-1">{children}</div></label>
+);
+const inp = 'w-full rounded-xl border border-blush bg-offwhite px-4 py-2.5 outline-none focus:border-burgundy';
+const Logo = () => (
+  <a href="#/home" className="flex items-center gap-2 text-2xl font-extrabold text-burgundy">
+    <span className="w-9 h-9 rounded-full bg-burgundy text-white flex items-center justify-center"><Icon n="bridge" className="w-5 h-5" /></span>Food Bridge
+  </a>
+);
+
+/* ---------- header ---------- */
+function Header({ user, onAuth, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const links = [['home','Home'],['receive','Receive Meals'],['partner','Become a Partner'],['trust','Trust & Community'],['legal','Legal & Privacy Policies'],['contact','Contact']];
+  return (
+    <header className="bg-white rounded-t-[2rem] border-b border-blush">
+      <div className="flex items-center justify-between px-6 py-4">
+        <Logo />
+        <div className="hidden lg:flex items-center gap-3">
+          {user ? <><span className="text-sm font-semibold">Hi, {user.name} ({user.role})</span><button onClick={onLogout} className="text-sm text-burgundy font-semibold">Logout</button></>
+                : <button onClick={onAuth} className="text-sm text-burgundy font-semibold">Login / Sign Up</button>}
+          <Btn onClick={() => go('partner')}>Donate Food</Btn>
+        </div>
+        <button className="lg:hidden text-2xl text-burgundy" onClick={() => setOpen(!open)}>☰</button>
+      </div>
+      <nav className={(open ? 'flex ' : 'hidden ') + 'lg:flex flex-col lg:flex-row lg:justify-center gap-1 lg:gap-6 px-6 pb-3 bg-blush/50 pt-3'}>
+        {links.map(([k, l]) => <a key={k} href={'#/' + k} onClick={() => setOpen(false)} className="text-sm font-semibold text-ink hover:text-burgundy py-1">{l}</a>)}
+        <div className="lg:hidden flex gap-3 pt-2">
+          {user ? <button onClick={onLogout} className="text-sm text-burgundy font-semibold">Logout</button> : <button onClick={onAuth} className="text-sm text-burgundy font-semibold">Login / Sign Up</button>}
+          <Btn onClick={() => go('partner')}>Donate Food</Btn>
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+/* ---------- auth modal ---------- */
+function AuthModal({ onClose, onDone }) {
+  const [mode, setMode] = useState('login');
+  const [users, setUsers] = useStore('fb_users', []);
+  const [f, setF] = useState({ name:'', email:'', password:'', role:'Receiver' });
+  const [err, setErr] = useState('');
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const submit = (e) => {
+    e.preventDefault(); setErr('');
+    if (mode === 'signup') {
+      if (users.find(x => x.email === f.email)) return setErr('Email already registered.');
+      if (f.password.length < 6) return setErr('Password must be at least 6 characters.');
+      const nu = { name:f.name, email:f.email, password:f.password, role:f.role };
+      setUsers([...users, nu]); onDone(nu);
+    } else {
+      const found = users.find(x => x.email === f.email && x.password === f.password);
+      if (!found) return setErr('Invalid email or password.');
+      onDone(found);
+    }
+  };
+  return (
+    <div className="fixed inset-0 bg-maroon/60 flex items-center justify-center z-[1000] p-4" onClick={onClose}>
+      <form onSubmit={submit} onClick={e => e.stopPropagation()} className="bg-white rounded-3xl p-8 w-full max-w-md space-y-4">
+        <h3 className="text-2xl font-extrabold text-burgundy">{mode === 'login' ? 'Welcome back' : 'Join Food Bridge'}</h3>
+        {mode === 'signup' && <Field label="Full name"><input required className={inp} value={f.name} onChange={set('name')} /></Field>}
+        <Field label="Email"><input required type="email" className={inp} value={f.email} onChange={set('email')} /></Field>
+        <Field label="Password"><input required type="password" className={inp} value={f.password} onChange={set('password')} /></Field>
+        {mode === 'signup' && <Field label="I am a"><select className={inp} value={f.role} onChange={set('role')}><option>Receiver</option><option>Restaurant</option><option>NGO</option></select></Field>}
+        {err && <p className="text-sm text-burgundy font-semibold">{err}</p>}
+        <Btn type="submit" className="w-full">{mode === 'login' ? 'Login' : 'Create account'}</Btn>
+        <p className="text-sm text-center">{mode === 'login' ? 'New here?' : 'Already a member?'} <button type="button" className="text-burgundy font-semibold" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>{mode === 'login' ? 'Sign up' : 'Login'}</button></p>
+        <p className="text-xs text-ink/50 text-center">Demo mode: accounts are stored in your browser. The Express backend adds real secure auth.</p>
+      </form>
+    </div>
+  );
+}
+
+/* ---------- HOME ---------- */
+function Home() {
+  const steps = [[IMG.kitchen,'store','Restaurants Share Surplus Food'],[IMG.restaurant,'list','Food Is Listed on Food Bridge'],[IMG.donation,'badge','Verified Organizations Request Meals'],[IMG.volunteers,'heart','Food Reaches People in Need']];
+  const stats = [['1,20,000+','Meals Donated'],['250+','Partner Restaurants'],['85,000+','People Supported'],['45 tons','Food Waste Reduced']];
+  const promise = [['shield','Food Safety'],['eye','Transparency'],['badge','Verified Partners'],['scale','Responsible Distribution']];
+  const gallery = [[IMG.volunteers,'Volunteers distributing meals'],[IMG.kitchen,'Restaurant kitchen'],[IMG.donation,'Food donation drive'],[IMG.community,'Community meal sharing'],[IMG.hands,'Sharing with those in need'],[IMG.restaurant,'Partner restaurant']];
+  return (<>
+    <section className="hero-grad text-white px-6 md:px-12 pt-12 pb-36 relative overflow-hidden">
+      <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full pointer-events-none"></div>
+      <div className="absolute left-1/3 -top-10 w-40 h-40 bg-white/10 rounded-full pointer-events-none"></div>
+      <div className="grid md:grid-cols-[auto_1fr_auto] gap-8 items-center relative">
+        <Photo src={IMG.hero} alt="Fresh meal" className="mx-auto w-56 h-56 md:w-72 md:h-72 rounded-full border-8 border-white shadow-2xl" />
+        <div>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">GOOD FOOD.<br/>GREATER PURPOSE.</h1>
+          <p className="text-xl mt-3 font-light">Bridging the Gap Between Excess Food and Empty Plates.</p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Btn variant="light" onClick={() => go('receive')}>Find Meals</Btn>
+            <Btn className="!bg-maroon" onClick={() => go('partner')}>Donate Excess Food</Btn>
+          </div>
+        </div>
+        <div className="hidden md:flex flex-col gap-4">
+          <Photo src={IMG.heroSmall1} alt="Meal" className="w-28 h-28 rounded-full border-4 border-white" />
+          <Photo src={IMG.heroSmall2} alt="Meal" className="w-28 h-28 rounded-full border-4 border-white" />
+        </div>
+      </div>
+    </section>
+
+    {/* relative + z-10 keeps this white panel ABOVE the hero, so no text is hidden */}
+    <section className="relative z-10 -mt-20 mx-3 md:mx-6 bg-offwhite rounded-[2rem] p-6 md:p-10 space-y-14 shadow-xl">
+      <div className="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <H2>Our Mission</H2>
+          <p className="leading-relaxed">Every day, restaurants prepare more food than they can serve, while many people go to bed hungry. Food Bridge connects restaurants that have safe, fresh surplus food with verified organizations and individuals who need meals, reducing food waste and feeding communities.</p>
+          <div className="flex flex-wrap gap-3 mt-5"><Btn onClick={() => go('receive')}>Receive Meals</Btn><Btn variant="outline" onClick={() => go('partner')}>Become a Partner</Btn></div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {FOODS.slice(0, 4).map(f => <Photo key={f.id} src={f.img} alt={f.name} className="rounded-3xl h-32 w-full soft" />)}
+        </div>
+      </div>
+
+      <div>
+        <H2 sub="Four simple steps from surplus to supper.">How Food Bridge Works</H2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {steps.map(([img, ic, t], i) => (
+            <Card key={t} className="!p-0 overflow-hidden text-center">
+              <Photo src={img} alt={t} className="w-full h-36" />
+              <div className="p-5">
+                <div className="w-10 h-10 mx-auto -mt-10 mb-2 relative rounded-full bg-burgundy text-white flex items-center justify-center border-4 border-white"><Icon n={ic} className="w-5 h-5" /></div>
+                <p className="text-xs font-bold text-rose">STEP {i + 1}</p><p className="font-bold text-burgundy mt-1">{t}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <H2>Our Impact</H2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {stats.map(([n, l]) => <div key={l} className="bg-blush rounded-3xl p-6 text-center"><p className="text-3xl font-extrabold text-burgundy">{n}</p><p className="text-sm font-semibold mt-1">{l}</p></div>)}
+        </div>
+      </div>
+
+      <div>
+        <H2 sub="Moments from our kitchens and communities.">Community Stories</H2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {gallery.map(([src, c]) => <Photo key={c} src={src} alt={c} className="rounded-3xl h-40 md:h-48 w-full soft" />)}
+        </div>
+      </div>
+
+      <div>
+        <H2 sub="No secret spell, only honest work.">Our Promise</H2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {promise.map(([ic, t]) => <div key={t} className="bg-blush/60 rounded-3xl p-6 text-center"><div className="w-14 h-14 mx-auto rounded-full border-2 border-burgundy flex items-center justify-center text-burgundy bg-white"><Icon n={ic} /></div><p className="font-bold text-burgundy mt-3">{t}</p></div>)}
+        </div>
+      </div>
+    </section>
+    <div className="h-8"></div>
+  </>);
+}
+
+/* ---------- REQUEST MODAL: quantity + location + delivery time ---------- */
+function RequestModal({ food, remaining, onClose, onDone }) {
+  const [qty, setQty] = useState(1);
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [pos, setPos] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [done, setDone] = useState(null);
+
+  const km = pos ? distanceKm(food.lat, food.lng, pos.lat, pos.lng) : null;
+  const eta = km != null ? etaMinutes(km) : null;
+  const outOfRange = km != null && km > MAX_RANGE_KM;
+
+  const reverse = async (lat, lng) => {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const j = await r.json();
+      if (j.display_name) setAddress(j.display_name);
+    } catch {}
+  };
+  const pick = (lat, lng) => { setPos({ lat, lng }); setMsg(''); reverse(lat, lng); };
+
+  const locate = () => {
+    if (!navigator.geolocation) return setMsg('Your browser does not support location.');
+    setBusy(true); setMsg('');
+    navigator.geolocation.getCurrentPosition(
+      (p) => { pick(p.coords.latitude, p.coords.longitude); setBusy(false); },
+      () => { setBusy(false); setMsg('Location permission was denied or unavailable. Please allow location access in your browser and try again.'); },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+  const submit = (e) => {
+    e.preventDefault();
+    if (!pos) return setMsg('Please tap "Use my current location" so we can estimate delivery time.');
+    if (outOfRange) return setMsg(`Sorry, this restaurant delivers only within ${MAX_RANGE_KM} km.`);
+    if (!/^\d{10}$/.test(phone)) return setMsg('Enter a valid 10-digit phone number.');
+    const req = { id: Date.now(), foodId: food.id, foodName: food.name, rest: food.rest, unit: food.unit, qty, address, phone, lat: pos.lat, lng: pos.lng, km: +km.toFixed(1), eta, createdAt: Date.now(), status: 'Pending approval' };
+    onDone(req); setDone(req);
+  };
+
+  if (done) return (
+    <div className="fixed inset-0 bg-maroon/60 flex items-center justify-center z-[1000] p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl p-8 w-full max-w-md text-center space-y-3" onClick={e => e.stopPropagation()}>
+        <div className="w-16 h-16 mx-auto rounded-full bg-burgundy text-white flex items-center justify-center"><Icon n="check" className="w-8 h-8" /></div>
+        <h3 className="text-2xl font-extrabold text-burgundy">Request sent!</h3>
+        <p>{done.qty} {done.unit} of <b>{done.foodName}</b> from {done.rest}.</p>
+        <div className="bg-blush rounded-2xl p-4"><p className="text-sm">Estimated delivery time</p><p className="text-3xl font-extrabold text-burgundy">~{done.eta} min</p><p className="text-xs mt-1">{done.km} km away. The countdown starts once the restaurant approves.</p></div>
+        <Btn onClick={onClose} className="w-full">Done</Btn>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 bg-maroon/60 flex items-start md:items-center justify-center z-[1000] p-3 overflow-y-auto" onClick={onClose}>
+      <form onSubmit={submit} onClick={e => e.stopPropagation()} className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl space-y-4 my-4">
+        <div className="flex justify-between items-start">
+          <div><h3 className="text-2xl font-extrabold text-burgundy">Request Meals</h3><p className="text-sm">{food.name} · {food.rest}</p></div>
+          <button type="button" onClick={onClose} className="text-2xl text-burgundy leading-none">×</button>
+        </div>
+
+        <Field label={`How many ${food.unit} do you need? (${remaining} available)`}>
+          <div className="flex items-center gap-3">
+            <button type="button" className="w-10 h-10 rounded-full bg-blush text-burgundy text-xl font-bold" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+            <input type="number" min="1" max={remaining} className={inp + ' !w-24 text-center'} value={qty}
+              onChange={e => setQty(Math.min(remaining, Math.max(1, parseInt(e.target.value) || 1)))} />
+            <button type="button" className="w-10 h-10 rounded-full bg-blush text-burgundy text-xl font-bold" onClick={() => setQty(Math.min(remaining, qty + 1))}>+</button>
+          </div>
+        </Field>
+
+        <Field label="Your delivery address">
+          <textarea rows="2" className={inp} placeholder="House no., street, area, city" value={address} onChange={e => setAddress(e.target.value)} />
+        </Field>
+        <div className="flex flex-wrap gap-2">
+          <Btn variant="outline" onClick={locate} disabled={busy}>Use my current location</Btn>
+        </div>
+
+        {eta != null && (
+          <div className={'rounded-2xl p-4 flex items-center gap-4 ' + (outOfRange ? 'bg-red-50' : 'bg-blush')}>
+            <Icon n="truck" className="w-8 h-8 text-burgundy shrink-0" />
+            {outOfRange
+              ? <p className="text-sm font-semibold text-burgundy">You are {km.toFixed(1)} km away. This restaurant delivers only within {MAX_RANGE_KM} km.</p>
+              : <div><p className="text-sm">Distance: <b>{km.toFixed(1)} km</b></p><p className="font-extrabold text-burgundy text-lg">Delivery boy reaches you in about {eta} minutes</p><p className="text-xs">Estimate after approval: 10 min for pickup plus travel time.</p></div>}
+          </div>
+        )}
+
+        <Field label="Phone number (for the delivery boy)"><input required type="tel" inputMode="numeric" maxLength="10" className={inp} value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))} /></Field>
+        {msg && <p className="text-sm font-semibold text-burgundy">{msg}</p>}
+        <Btn type="submit" className="w-full" disabled={!pos || outOfRange}>Send Request</Btn>
+      </form>
+    </div>
+  );
+}
+
+/* ---------- RECEIVE ---------- */
+function Receive({ user, openAuth }) {
+  const [q, setQ] = useState(''); const [cat, setCat] = useState('All');
+  const [reqs, setReqs] = useStore('fb_requests2', []);
+  const [stock, setStock] = useStore('fb_stock', {});
+  const [active, setActive] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t); }, []);
+
+  const left = (f) => (stock[f.id] ?? f.qty);
+  const list = FOODS.filter(f => (cat === 'All' || f.cat === cat) && (f.name + f.rest + f.loc).toLowerCase().includes(q.toLowerCase()));
+  const open = (f) => {
+    if (!user) return openAuth();
+    if (user.role === 'Restaurant') return alert('Restaurant accounts cannot request meals. Please use a Receiver or NGO account.');
+    setActive(f);
+  };
+  const finish = (r) => { setReqs([r, ...reqs]); setStock({ ...stock, [r.foodId]: left(FOODS.find(f => f.id === r.foodId)) - r.qty }); };
+  const minsLeft = (r) => Math.max(0, r.eta - Math.floor((now - r.createdAt) / 60000));
+
+  return (
+    <section className="p-6 md:p-10">
+      <div className="hero-grad text-white rounded-3xl p-8 mb-8"><h1 className="text-4xl font-extrabold">Receive Meals</h1><p className="mt-2">Browse fresh surplus food from verified restaurants near you.</p></div>
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <input className={inp + ' md:max-w-sm'} placeholder="Search food, restaurant or area..." value={q} onChange={e => setQ(e.target.value)} />
+        <div className="flex flex-wrap gap-2">{CATS.map(c => <button key={c} onClick={() => setCat(c)} className={'px-4 py-2 rounded-full text-sm font-semibold ' + (cat === c ? 'bg-burgundy text-white' : 'bg-blush text-burgundy')}>{c}</button>)}</div>
+      </div>
+      {list.length === 0 && <p className="text-center py-10">No meals match your search.</p>}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {list.map(f => {
+          const r = left(f);
+          const status = r === 0 ? 'Sold out' : r <= 10 ? 'Limited' : 'Available';
+          return (
+            <Card key={f.id} className="!p-0 overflow-hidden">
+              <div className="relative">
+                <Photo src={f.img} alt={f.name} className="w-full h-48" />
+                <span className="absolute top-3 right-3 bg-blush text-burgundy text-xs font-bold px-3 py-1 rounded-full">{status}</span>
+              </div>
+              <div className="p-5 space-y-1.5 text-sm">
+                <h3 className="text-lg font-bold text-burgundy">{f.name}</h3>
+                <p className="font-semibold">{f.rest}</p>
+                <p className="flex gap-2 items-center"><Icon n="box" className="w-4 h-4 text-rose" /> {r} {f.unit} available</p>
+                <p className="flex gap-2 items-center"><Icon n="pin" className="w-4 h-4 text-rose" /> {f.loc}</p>
+                <p className="flex gap-2 items-center"><Icon n="fork" className="w-4 h-4 text-rose" /> Prepared: {f.prep}</p>
+                <p className="flex gap-2 items-center"><Icon n="clock" className="w-4 h-4 text-rose" /> Pickup by: {f.deadline}</p>
+                <p><span className="bg-blush text-burgundy text-xs font-semibold px-2 py-0.5 rounded-full">{f.cat}</span></p>
+                <Btn className="w-full mt-3" disabled={r === 0} onClick={() => open(f)}>{r === 0 ? 'Sold out' : 'Request Meals'}</Btn>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {user && reqs.length > 0 && (
+        <div className="mt-12">
+          <H2 sub="Delivery times are estimates.">Your Requests</H2>
+          <div className="space-y-3">{reqs.map(r => (
+            <Card key={r.id} className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
+              <div><p className="font-bold text-burgundy">{r.qty} {r.unit} · {r.foodName}</p><p className="text-sm">{r.rest} → {r.address.slice(0, 70)}{r.address.length > 70 ? '…' : ''}</p></div>
+              <div className="text-right"><span className="bg-blush text-burgundy text-xs font-bold px-3 py-1 rounded-full">{r.status}</span><p className="text-sm mt-1">Arrival: ~{minsLeft(r)} min</p></div>
+            </Card>))}
+          </div>
+        </div>
+      )}
+      {active && <RequestModal food={active} remaining={left(active)} onClose={() => setActive(null)} onDone={finish} />}
+    </section>
+  );
+}
+
+/* ---------- PARTNER ---------- */
+function Partner() {
+  const [partners, setPartners] = useStore('fb_partners', []);
+  const [f, setF] = useState({ name:'', owner:'', email:'', phone:'', address:'', fssai:'', doc:'', agree:false });
+  const [ok, setOk] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+  const submit = (e) => { e.preventDefault(); setPartners([...partners, { ...f, status:'Pending verification' }]); setOk(true); };
+  const benefits = [['box','Cut food waste'],['heart','Build goodwill'],['list','Simple donation records'],['badge','Community recognition']];
+  const rules = ['Donate only food that is fresh, safe and within its safe-time window.','Pack in clean, sealed, food-grade containers.','Label each item with preparation time and allergens.','Keep hot food hot and cold food cold until pickup.','Never donate food that has been served to customers.'];
+  return (
+    <section className="p-6 md:p-10 space-y-10">
+      <div className="hero-grad text-white rounded-3xl p-8 md:p-12 grid md:grid-cols-[1fr_auto] gap-6 items-center">
+        <div><h1 className="text-4xl font-extrabold">Become a Partner</h1><p className="mt-2 max-w-xl">Turn your surplus into someone's meal. Join Food Bridge's network of verified restaurants.</p></div>
+        <Photo src={IMG.kitchen} alt="Restaurant kitchen" className="hidden md:block w-44 h-44 rounded-full border-8 border-white" />
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">{benefits.map(([ic, t]) => <div key={t} className="bg-blush rounded-3xl p-6 text-center"><div className="w-14 h-14 mx-auto rounded-full bg-white text-burgundy flex items-center justify-center"><Icon n={ic} /></div><p className="font-bold text-burgundy mt-2">{t}</p></div>)}</div>
+      <div><H2>How Food Donation Works</H2><ol className="grid md:grid-cols-4 gap-4 text-sm">{['Register and get verified','List surplus food with pickup time','Approve a verified request','Hand over the food and track impact'].map((t, i) => <li key={t} className="bg-white rounded-2xl soft p-4"><b className="text-rose">{i + 1}.</b> {t}</li>)}</ol></div>
+      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-8">
+        <Card>
+          <h3 className="text-2xl font-extrabold text-burgundy mb-4">Restaurant Registration</h3>
+          {ok ? <div className="text-center py-10"><div className="w-16 h-16 mx-auto rounded-full bg-burgundy text-white flex items-center justify-center"><Icon n="check" className="w-8 h-8" /></div><p className="font-bold text-burgundy text-xl mt-2">Request submitted!</p><p className="text-sm mt-1">Our team will verify your documents and contact you.</p></div> :
+          <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
+            <Field label="Restaurant name"><input required className={inp} value={f.name} onChange={set('name')} /></Field>
+            <Field label="Owner / manager"><input required className={inp} value={f.owner} onChange={set('owner')} /></Field>
+            <Field label="Email"><input required type="email" className={inp} value={f.email} onChange={set('email')} /></Field>
+            <Field label="Phone"><input required type="tel" className={inp} value={f.phone} onChange={set('phone')} /></Field>
+            <div className="md:col-span-2"><Field label="Address"><input required className={inp} value={f.address} onChange={set('address')} /></Field></div>
+            <Field label="FSSAI licence number"><input required className={inp} value={f.fssai} onChange={set('fssai')} /></Field>
+            <Field label="Business verification document"><input required type="file" accept=".pdf,.jpg,.png" className={inp} onChange={e => setF({ ...f, doc: e.target.files[0]?.name || '' })} /></Field>
+            <label className="md:col-span-2 text-sm flex gap-2"><input required type="checkbox" checked={f.agree} onChange={set('agree')} /> I agree to the food safety guidelines and partner terms.</label>
+            <div className="md:col-span-2"><Btn type="submit">Submit Partnership Request</Btn></div>
+          </form>}
+        </Card>
+        <Card className="bg-blush/60 h-fit"><h3 className="text-xl font-extrabold text-burgundy mb-3">Food Safety Guidelines</h3><ul className="space-y-2 text-sm">{rules.map(r => <li key={r} className="flex gap-2"><Icon n="check" className="w-4 h-4 mt-0.5 text-burgundy shrink-0" /> {r}</li>)}</ul></Card>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- TRUST ---------- */
+function Stars({ n, set }) {
+  return <span>{[1, 2, 3, 4, 5].map(i => <button type="button" key={i} onClick={set ? () => set(i) : undefined} className={'text-2xl ' + (i <= n ? 'text-burgundy' : 'text-blush')}>★</button>)}</span>;
+}
+function Trust({ user }) {
+  const seed = [{ name:'Priya S.', rating:5, text:'Food Bridge helped our shelter serve hot dinners every week.' }, { name:'Chef Arun', rating:5, text:'We stopped throwing food away. The process is so easy.' }, { name:'Meena R.', rating:4, text:'Quick pickup and very kind volunteers.' }];
+  const [reviews, setReviews] = useStore('fb_reviews', seed);
+  const [f, setF] = useState({ name: user?.name || '', rating:5, text:'' });
+  const submit = (e) => { e.preventDefault(); setReviews([{ ...f }, ...reviews]); setF({ ...f, text:'' }); };
+  const checks = [['store','Restaurant verification','FSSAI licence and premises checked before approval.'],['badge','NGO verification','Registration and 12A / 80G documents reviewed.'],['shield','Food safety standards','Safe-time limits, packing and hygiene rules enforced.']];
+  const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  return (
+    <section className="p-6 md:p-10 space-y-10">
+      <div className="hero-grad text-white rounded-3xl p-8 md:p-12"><h1 className="text-4xl font-extrabold">Trust & Community</h1><p className="mt-2">Transparent, verified and loved by the people we serve.</p></div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">{[['1,20,000+','Meals Donated'],['250+','Partner Restaurants'],['85,000+','People Supported'],['45 tons','Food Waste Reduced']].map(([n, l]) => <div key={l} className="bg-blush rounded-3xl p-6 text-center"><p className="text-3xl font-extrabold text-burgundy">{n}</p><p className="text-sm font-semibold">{l}</p></div>)}</div>
+      <div className="grid md:grid-cols-3 gap-5">{checks.map(([ic, t, d]) => <Card key={t}><div className="w-12 h-12 rounded-full bg-blush text-burgundy flex items-center justify-center"><Icon n={ic} /></div><h3 className="font-bold text-burgundy mt-3">{t}</h3><p className="text-sm mt-1">{d}</p></Card>)}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[IMG.volunteers, IMG.donation, IMG.community, IMG.hands].map((s, i) => <Photo key={i} src={s} alt="Community story" className="rounded-3xl h-36 w-full soft" />)}</div>
+      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-8">
+        <div>
+          <H2 sub={`Average rating ${avg} / 5 from ${reviews.length} reviews`}>Community Stories & Reviews</H2>
+          <div className="space-y-4">{reviews.map((r, i) => <Card key={i}><Stars n={r.rating} /><p className="mt-1">“{r.text}”</p><p className="text-sm font-semibold text-burgundy mt-2">— {r.name}</p></Card>)}</div>
+        </div>
+        <Card className="h-fit">
+          <h3 className="text-xl font-extrabold text-burgundy mb-3">Share your feedback</h3>
+          <form onSubmit={submit} className="space-y-3">
+            <Field label="Your name"><input required className={inp} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>
+            <Field label="Rating"><Stars n={f.rating} set={n => setF({ ...f, rating: n })} /></Field>
+            <Field label="Your experience"><textarea required rows="4" className={inp} value={f.text} onChange={e => setF({ ...f, text: e.target.value })} /></Field>
+            <Btn type="submit">Submit Feedback</Btn>
+          </form>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- LEGAL ---------- */
+function Legal() {
+  const docs = [
+    ['Privacy Policy','We collect only the details needed to run Food Bridge: name, contact information, delivery address and role. We never sell personal data. Your location is used only to place your request and estimate delivery time.'],
+    ['Terms and Conditions','By using Food Bridge you agree to share and receive food responsibly, provide accurate information and follow all platform rules.'],
+    ['Food Donation Policy','Only fresh, safe, unserved food may be listed. Donations are free of charge and may not be resold.'],
+    ['Food Safety and Hygiene Guidelines','Food must be packed hygienically, labelled with preparation time, and handed over within the stated safe window.'],
+    ['Refund and Cancellation Policy','Meals are free, so no refunds apply. Requests can be cancelled before pickup; repeated no-shows may limit access.'],
+    ['User Responsibilities','Be available at the delivery location, treat volunteers and partners respectfully, and consume or distribute food safely.'],
+    ['Partner Responsibilities','Keep listings accurate, maintain hygiene standards, hold valid licences and update availability promptly.'],
+    ['Data Protection Policy','Data is stored securely, passwords are encrypted, and you may request access to or deletion of your data at any time.'],
+  ];
+  return (
+    <section className="p-6 md:p-10">
+      <div className="hero-grad text-white rounded-3xl p-8 mb-8"><h1 className="text-4xl font-extrabold">Legal & Privacy Policies</h1></div>
+      <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+        <aside className="hidden lg:block"><div className="bg-white rounded-3xl soft p-5 sticky top-4 space-y-2 text-sm">{docs.map(([t]) => <a key={t} href="#/legal" onClick={e => { e.preventDefault(); document.getElementById(t)?.scrollIntoView({ behavior:'smooth' }); }} className="block font-semibold hover:text-burgundy">{t}</a>)}</div></aside>
+        <div className="space-y-5">{docs.map(([t, d]) => <Card key={t}><h2 id={t} className="text-xl font-extrabold text-burgundy">{t}</h2><p className="mt-2 leading-relaxed">{d}</p></Card>)}</div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- CONTACT ---------- */
+function Contact() {
+  const [msgs, setMsgs] = useStore('fb_messages', []);
+  const [f, setF] = useState({ name:'', email:'', phone:'', subject:'', message:'' });
+  const [sent, setSent] = useState(false);
+  const [open, setOpen] = useState(0);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const submit = (e) => { e.preventDefault(); setMsgs([...msgs, f]); setSent(true); setF({ name:'', email:'', phone:'', subject:'', message:'' }); };
+  const faqs = [['Is the food really free?','Yes. Food Bridge is free for receivers and partners.'],['How is food safety ensured?','Every restaurant is verified and must follow our safe-time and packing rules.'],['How long will delivery take?','You see an estimate before sending your request. It depends on your distance from the restaurant.'],['Who can request meals?','Individuals and verified NGOs, shelters and community groups can sign up and request meals.'],['How do I become a partner?','Open the Become a Partner page, fill the registration form and upload your business document.']];
+  return (
+    <section className="p-6 md:p-10 space-y-10">
+      <div className="hero-grad text-white rounded-3xl p-8"><h1 className="text-4xl font-extrabold">Contact Us</h1><p className="mt-2">Questions, ideas or feedback? We would love to hear from you.</p></div>
+      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-8">
+        <Card>
+          {sent ? <div className="text-center py-10"><div className="w-16 h-16 mx-auto rounded-full bg-burgundy text-white flex items-center justify-center"><Icon n="mail" className="w-8 h-8" /></div><p className="font-bold text-burgundy text-xl mt-2">Message sent. Thank you!</p><Btn className="mt-4" onClick={() => setSent(false)}>Send another</Btn></div> :
+          <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
+            <Field label="Name"><input required className={inp} value={f.name} onChange={set('name')} /></Field>
+            <Field label="Email"><input required type="email" className={inp} value={f.email} onChange={set('email')} /></Field>
+            <Field label="Phone number"><input type="tel" className={inp} value={f.phone} onChange={set('phone')} /></Field>
+            <Field label="Subject"><input required className={inp} value={f.subject} onChange={set('subject')} /></Field>
+            <div className="md:col-span-2"><Field label="Message"><textarea required rows="5" className={inp} value={f.message} onChange={set('message')} /></Field></div>
+            <div className="md:col-span-2"><Btn type="submit">Send Message</Btn></div>
+          </form>}
+        </Card>
+        <Card className="bg-blush/60 h-fit space-y-3 text-sm">
+          <h3 className="text-xl font-extrabold text-burgundy">Get in touch</h3>
+          <p className="flex gap-2 items-center"><Icon n="mail" className="w-4 h-4 text-burgundy" /> hello@foodbridge.org</p>
+          <p className="flex gap-2 items-center"><Icon n="phone" className="w-4 h-4 text-burgundy" /> +91 98765 43210</p>
+          <p className="flex gap-2 items-center"><Icon n="pin" className="w-4 h-4 text-burgundy" /> Chennai, Tamil Nadu</p>
+          <div className="flex gap-3 pt-2 font-semibold text-burgundy"><a href="#/contact">Instagram</a><a href="#/contact">Facebook</a><a href="#/contact">X</a><a href="#/contact">LinkedIn</a></div>
+        </Card>
+      </div>
+      <div><H2>Frequently Asked Questions</H2>
+        <div className="space-y-3">{faqs.map(([q, a], i) => <div key={q} className="bg-white rounded-2xl soft"><button className="w-full text-left px-5 py-4 font-semibold text-burgundy flex justify-between" onClick={() => setOpen(open === i ? -1 : i)}>{q}<span>{open === i ? '−' : '+'}</span></button>{open === i && <p className="px-5 pb-4 text-sm">{a}</p>}</div>)}</div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- FOOTER ---------- */
+function Footer() {
+  const [email, setEmail] = useState(''); const [done, setDone] = useState(false);
+  const col = (t, items) => <div><h4 className="font-bold text-burgundy mb-2 text-sm">{t}</h4><ul className="space-y-1 text-sm">{items.map(([k, l]) => <li key={l}><a href={'#/' + k} className="hover:text-burgundy">{l}</a></li>)}</ul></div>;
+  return (
+    <footer>
+      <div className="mx-3 md:mx-6 bg-burgundy text-white rounded-3xl text-center font-bold text-lg md:text-2xl py-6 px-4 mb-6">Food Bridge – Every Meal Shared Makes a Difference.</div>
+      <div className="bg-white rounded-b-[2rem] px-6 md:px-10 py-10 grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div><Logo /><p className="text-sm mt-2">Connecting surplus restaurant food with people who need it.</p></div>
+        {col('Quick Links', [['home','Home'],['receive','Receive Meals'],['partner','Become a Partner']])}
+        {col('Our Pages', [['trust','Trust & Community'],['contact','Contact'],['contact','FAQs']])}
+        {col('Legal Information', [['legal','Privacy Policy'],['legal','Terms & Conditions'],['legal','Food Safety']])}
+        <div><h4 className="font-bold text-burgundy mb-2 text-sm">Contact & Social</h4><p className="text-sm">hello@foodbridge.org<br/>+91 98765 43210</p><p className="text-sm mt-2 text-burgundy font-semibold">Instagram · Facebook · X</p></div>
+        <form className="md:col-span-2 lg:col-span-5 flex flex-col sm:flex-row gap-3 pt-4 border-t border-blush" onSubmit={e => { e.preventDefault(); setDone(true); }}>
+          {done ? <p className="font-semibold text-burgundy">Thanks for subscribing!</p> : <>
+            <input required type="email" placeholder="Enter your email address" className={inp + ' sm:max-w-md !rounded-full'} value={email} onChange={e => setEmail(e.target.value)} />
+            <Btn type="submit">Subscribe</Btn></>}
+        </form>
+        <p className="md:col-span-2 lg:col-span-5 text-xs text-ink/60">© 2026 Food Bridge. All rights reserved.</p>
+      </div>
+    </footer>
+  );
+}
+
+/* ---------- APP ---------- */
+function App() {
+  const page = useHash();
+  const [user, setUser] = useStore('fb_user', null);
+  const [auth, setAuth] = useState(false);
+  const view = { home:<Home/>, receive:<Receive user={user} openAuth={() => setAuth(true)}/>, partner:<Partner/>, trust:<Trust user={user}/>, legal:<Legal/>, contact:<Contact/> }[page] || <Home/>;
+  return (
+    <div className="max-w-6xl mx-auto my-4 md:my-8 px-2">
+      <Header user={user} onAuth={() => setAuth(true)} onLogout={() => setUser(null)} />
+      <main className="bg-offwhite">{view}</main>
+      <Footer />
+      {auth && <AuthModal onClose={() => setAuth(false)} onDone={x => { setUser(x); setAuth(false); }} />}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
