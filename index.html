@@ -15,12 +15,112 @@ tailwind.config = { theme: { extend: {
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  try {
+    if (localStorage.getItem('fb_theme') === '"dark"') {
+      document.documentElement.classList.add('dark-theme');
+    }
+  } catch (e) {}
+</script>
 <style>
   body { background:#FFF1DF; }
   .hero-grad { background: linear-gradient(135deg,#C95F70 0%,#9F292F 55%,#84252B 100%); }
   .soft { box-shadow: 0 8px 24px rgba(159,41,47,.10); }
-</style>
+  /* ---------- DARK THEME ---------- */
+html.dark-theme body {
+  background: #171416;
+  color: #f5e9e9;
+}
+
+html.dark-theme header,
+html.dark-theme footer .bg-white,
+html.dark-theme .bg-white {
+  background-color: #262124 !important;
+  color: #f5e9e9 !important;
+}
+
+html.dark-theme main {
+  background-color: #1d191c !important;
+}
+
+html.dark-theme .bg-offwhite {
+  background-color: #211c1f !important;
+}
+
+html.dark-theme .bg-blush,
+html.dark-theme .bg-blush\/50,
+html.dark-theme .bg-blush\/60 {
+  background-color: #38272c !important;
+}
+
+html.dark-theme .text-ink,
+html.dark-theme .text-ink\/70,
+html.dark-theme .text-ink\/60,
+html.dark-theme .text-ink\/50 {
+  color: #eadcde !important;
+}
+
+html.dark-theme .text-burgundy,
+html.dark-theme .text-maroon {
+  color: #f0a3ad !important;
+}
+
+html.dark-theme .border-blush {
+  border-color: #51363d !important;
+}
+
+html.dark-theme input,
+html.dark-theme textarea,
+html.dark-theme select {
+  background-color: #30282c !important;
+  color: #fff !important;
+  border-color: #65434b !important;
+}
+
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder {
+  color: #c5aeb3 !important;
+}
+
+html.dark-theme .bg-blush.text-burgundy {
+  color: #f5c0c7 !important;
+}
+
+html.dark-theme .theme-toggle {
+  background: #3b2a30;
+  color: #ffe2a8;
+  border: 1px solid #79505a;
+}
+
+html.dark-theme .theme-toggle:hover {
+  background: #51343d;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: #fff1df;
+  color: #84252b;
+  border: 1px solid #e8c4c8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.theme-toggle:hover {
+  background: #f6dadb;
+}
+
+html.dark-theme .soft {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+}</style>
 </head>
+
 <body class="font-sans text-ink">
 <div id="root"></div>
 
@@ -139,7 +239,7 @@ const Logo = () => (
 );
 
 /* ---------- header ---------- */
-function Header({ user, onAuth, onLogout }) {
+function Header({ user, onAuth, onLogout, theme, onToggleTheme }) {
   const [open, setOpen] = useState(false);
   const links = [['home','Home'],['receive','Receive Meals'],['partner','Become a Partner'],['trust','Trust & Community'],['legal','Legal & Privacy Policies'],['contact','Contact']];
   return (
@@ -155,7 +255,15 @@ function Header({ user, onAuth, onLogout }) {
       </div>
       <nav className={(open ? 'flex ' : 'hidden ') + 'lg:flex flex-col lg:flex-row lg:justify-center gap-1 lg:gap-6 px-6 pb-3 bg-blush/50 pt-3'}>
         {links.map(([k, l]) => <a key={k} href={'#/' + k} onClick={() => setOpen(false)} className="text-sm font-semibold text-ink hover:text-burgundy py-1">{l}</a>)}
-        <div className="lg:hidden flex gap-3 pt-2">
+        <button
+  type="button"
+  className="theme-toggle my-2 lg:my-0"
+  onClick={onToggleTheme}
+  aria-label="Toggle dark theme"
+  aria-pressed={theme === 'dark'}
+>
+  {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+</button><div className="lg:hidden flex gap-3 pt-2">
           {user ? <button onClick={onLogout} className="text-sm text-burgundy font-semibold">Logout</button> : <button onClick={onAuth} className="text-sm text-burgundy font-semibold">Login / Sign Up</button>}
           <Btn onClick={() => go('partner')}>Donate Food</Btn>
         </div>
@@ -609,11 +717,25 @@ function App() {
   const page = useHash();
   const [user, setUser] = useStore('fb_user', null);
   const [auth, setAuth] = useState(false);
+  const [theme, setTheme] = useStore('fb_theme', 'light');
+
+useEffect(() => {
+  document.documentElement.classList.toggle('dark-theme', theme === 'dark');
+}, [theme]);
+
+const toggleTheme = () => {
+  setTheme(current => current === 'dark' ? 'light' : 'dark');
+};
   const view = { home:<Home/>, receive:<Receive user={user} openAuth={() => setAuth(true)}/>, partner:<Partner/>, trust:<Trust user={user}/>, legal:<Legal/>, contact:<Contact/> }[page] || <Home/>;
   return (
     <div className="max-w-6xl mx-auto my-4 md:my-8 px-2">
-      <Header user={user} onAuth={() => setAuth(true)} onLogout={() => setUser(null)} />
-      <main className="bg-offwhite">{view}</main>
+      <Header
+  user={user}
+  onAuth={() => setAuth(true)}
+  onLogout={() => setUser(null)}
+  theme={theme}
+  onToggleTheme={toggleTheme}
+/><main className="bg-offwhite">{view}</main>
       <Footer />
       {auth && <AuthModal onClose={() => setAuth(false)} onDone={x => { setUser(x); setAuth(false); }} />}
     </div>
